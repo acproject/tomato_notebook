@@ -213,6 +213,20 @@ function SettingsPage() {
             </div>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              API Key
+              <span className="text-gray-400 font-normal ml-1">(选填，用于OpenAI兼容API)</span>
+            </label>
+            <input
+              type="password"
+              value={config.ai.apiKey}
+              onChange={(e) => handleAIChange('apiKey', e.target.value)}
+              placeholder="sk-..."
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+
           <div className="flex gap-2">
             <button
               onClick={testAI}
@@ -295,6 +309,21 @@ function SettingsPage() {
                 disabled={!config.miniMemory.enabled}
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              密码
+              <span className="text-gray-400 font-normal ml-1">(选填)</span>
+            </label>
+            <input
+              type="password"
+              value={config.miniMemory.password}
+              onChange={(e) => handleMiniMemoryChange('password', e.target.value)}
+              placeholder="******"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              disabled={!config.miniMemory.enabled}
+            />
           </div>
 
           <div className="flex gap-2">

@@ -2,12 +2,23 @@
   {
     "id": "0584b2e6-096f-43ca-b8a4-b0af2bbfec69",
     "title": "测试笔记1",
-    "content": "测试笔记1",
+    "content": "### 📝 新增章节：GGML 算子 (GGML Operators) #### 1. 什么是 GGML？ GGML (General Matrix Multiplier Library) 是一个用 C 语言编写的张量库，专为机器学习和大语言模型（LLM）推理设计。它是 `llama.cpp` 项目的核心基础。 * **核心特点**：专注于 CPU 优化、支持多种量化格式（Quantization）、内存管理高效。 * **主要用途**：在消费级硬件上运行大型语言模型。 #### 2. 核心数据结构 GGML 的操作围绕两个主要结构体展开： * `ggml_tensor`：表示张量，包含数据指针、维度（n_dims）、大小、数据类型（type，如 F32, F16, Q4_0 等）等信息。 * `ggml_context`：上下文管理，负责分配张量所需的内存。 #### 3. 常见算子分类 GGML 提供了丰富的算子来构建计算图（Computation Graph），主要分为以下几类： **A. 数学运算 (Math Operations)** * `ggml_add` / `ggml_mul`：逐元素加法和乘法。 * `ggml_scale`：张量标量乘法。 * `ggml_soft_max`：Softmax 激活函数，常用于注意力机制。 * `ggml_rms_norm`：均方根归一化，LLM 中常用的归一化方式。 **B. 张量变换 (Tensor Transformations)** * `ggml_reshape`：改变张量的形状而不复制数据。 * `ggml_transpose`：转置张量。 * `ggml_permute`：置换张量维度。 * `ggml_view`：创建张量的视图（View），用于切片或偏移。 **C. 线性代数 (Linear Algebra)** * `ggml_mul_mat`：矩阵乘法，这是 LLM 推理中最核心、计算量最大的算子（Attention 和 FFN 层）。 * `ggml_get_rows`：根据索引获取行数据，常用于 Embedding 层。 **D. 量化与反量化 (Quantization)** * `ggml_quantize_q4_0` / `ggml_quantize_q8_0`：将 FP32 数据量化为低精度格式以节省显存/内存。 * `ggml_dequantize`：将量化数据还原为浮点数据进行计算。 * *注：GGML 支持多种量化类型（Q4_0, Q4_1, Q5_0, Q8_0 等），是其在 CPU 上高效运行的关键。* #### 4. 计算图机制 (Computation Graph) GGML 不立即执行算子，而是构建一个计算图： 1. **构建**：调用各种 `ggml_*` 函数，生成计算节点（Nodes）。 2. **规划**：使用 `ggml_graph_compute` 决定执行顺序。 3. **执行**：根据调度器（Scheduler）在 CPU 线程上并行执行算子。 #### 5. 性能优化点 * **BLAS 支持**：在支持 BLAS 的平台上自动调用优化后的矩阵乘法。 * **线程并行**：算子内部通常支持多线程并行（如矩阵乘法）。 * **内存复用**：通过上下文管理减少内存碎片。 --- ### 💡 接下来你可以怎么做？ 1. **直接复制**：将上述内容复制到你当前的文档中。 2. **提供原文**：如果你想让我帮你**融合**进现有的文档结构，请将当前文档的文本内容发送给我，我会帮你调整格式和上下文。 3. **深入提问**：如果你对某个具体算子（比如 `ggml_mul_mat` 的实现细节）感兴趣，可以继续问我。 希望这些内容对你的学习有帮助！",
     "tags": [],
     "category": "study",
     "isFavorite": false,
     "isAIGenerated": false,
     "createdAt": "2026-04-06T13:51:45.231Z",
-    "updatedAt": "2026-04-06T13:51:45.231Z"
+    "updatedAt": "2026-04-06T14:48:51.562Z"
+  },
+  {
+    "id": "fba20287-6657-4ee7-8dc0-96706af82337",
+    "title": "todo list",
+    "content": "",
+    "tags": [],
+    "category": "study",
+    "isFavorite": false,
+    "isAIGenerated": false,
+    "createdAt": "2026-04-06T14:55:31.520Z",
+    "updatedAt": "2026-04-06T14:55:31.520Z"
   }
 ]

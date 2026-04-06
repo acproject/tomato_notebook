@@ -178,11 +178,13 @@ export interface AppConfig {
     apiBase: string;
     port: number;
     model: string;
+    apiKey: string;
   };
   miniMemory: {
     host: string;
     port: number;
     enabled: boolean;
+    password: string;
   };
   server: {
     port: number;
