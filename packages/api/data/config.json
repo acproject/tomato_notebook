@@ -1,0 +1,16 @@
+{
+  "ai": {
+    "apiBase": "http://localhost",
+    "port": 8110,
+    "model": "Qwen3.5-122B-A10B-GGUF"
+  },
+  "miniMemory": {
+    "host": "localhost",
+    "port": 6379,
+    "enabled": true
+  },
+  "server": {
+    "port": 3000,
+    "host": "0.0.0.0"
+  }
+}

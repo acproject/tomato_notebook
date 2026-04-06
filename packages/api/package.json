@@ -1,0 +1,23 @@
+{
+  "name": "@tomato-notebook/api",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run dist/index.js",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@tomato-notebook/core": "workspace:*",
+    "hono": "^4.0.0",
+    "@hono/node-server": "^1.8.0",
+    "better-sqlite3": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/better-sqlite3": "^7.6.0"
+  }
+}
