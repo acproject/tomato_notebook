@@ -6,11 +6,19 @@
 - [packages/api/src/routes/notes.ts](file://packages/api/src/routes/notes.ts)
 - [packages/api/src/routes/ai.ts](file://packages/api/src/routes/ai.ts)
 - [packages/api/src/routes/search.ts](file://packages/api/src/routes/search.ts)
+- [packages/api/src/routes/config.ts](file://packages/api/src/routes/config.ts)
 - [packages/core/src/types.ts](file://packages/core/src/types.ts)
 - [packages/core/src/ai.ts](file://packages/core/src/ai.ts)
 - [packages/core/src/search.ts](file://packages/core/src/search.ts)
 - [packages/core/src/storage.ts](file://packages/core/src/storage.ts)
 </cite>
+
+## 更新摘要
+**变更内容**
+- 新增配置管理API，支持AI服务、MiniMemory和服务器配置的动态管理
+- 更新AI服务API，增加对SQLite数据库配置的支持
+- 完善错误处理和响应格式的一致性
+- 增强AI服务的健康检查和连接测试功能
 
 ## 目录
 1. [简介](#简介)
@@ -26,12 +34,13 @@
 
 ## 简介
 
-番茄笔记API是一个基于Hono框架构建的RESTful API服务，提供了完整的笔记管理和AI增强功能。该系统支持笔记的CRUD操作、AI文本处理服务（润色、总结、翻译、聊天对话）、全文搜索功能以及统计分析。
+番茄笔记API是一个基于Hono框架构建的RESTful API服务，提供了完整的笔记管理和AI增强功能。该系统支持笔记的CRUD操作、AI文本处理服务（润色、总结、翻译、聊天对话）、全文搜索功能以及配置管理功能。
 
 主要特性包括：
 - 笔记管理：完整的CRUD操作和标签管理
-- AI服务：多种文本处理能力
+- AI服务：多种文本处理能力，支持多种AI模型
 - 搜索功能：全文搜索和智能过滤
+- 配置管理：动态配置AI服务、存储和服务器设置
 - 统计分析：学习进度追踪和数据统计
 - 多层存储：内存数据库和文件系统双重存储
 
@@ -44,6 +53,7 @@ API[API入口]
 Notes[笔记路由]
 AI[AI路由]
 Search[搜索路由]
+Config[配置路由]
 end
 subgraph "核心服务层"
 Services[服务工厂]
@@ -52,35 +62,39 @@ AIService[AI服务]
 SearchService[搜索服务]
 end
 subgraph "数据层"
-Memory[MiniMemory]
+SQLite[SQLite数据库]
 FileSystem[文件系统]
 NotesData[笔记数据]
 end
 API --> Notes
 API --> AI
 API --> Search
+API --> Config
 Notes --> Services
 AI --> Services
 Search --> Services
+Config --> Services
 Services --> Storage
 Services --> AIService
 Services --> SearchService
-Storage --> Memory
+Storage --> SQLite
 Storage --> FileSystem
 Storage --> NotesData
 ```
 
 **图表来源**
-- [packages/api/src/index.ts:1-64](file://packages/api/src/index.ts#L1-L64)
+- [packages/api/src/index.ts:44-53](file://packages/api/src/index.ts#L44-L53)
 - [packages/api/src/routes/notes.ts:1-161](file://packages/api/src/routes/notes.ts#L1-L161)
-- [packages/api/src/routes/ai.ts:1-149](file://packages/api/src/routes/ai.ts#L1-L149)
+- [packages/api/src/routes/ai.ts:1-388](file://packages/api/src/routes/ai.ts#L1-L388)
 - [packages/api/src/routes/search.ts:1-92](file://packages/api/src/routes/search.ts#L1-L92)
+- [packages/api/src/routes/config.ts:1-325](file://packages/api/src/routes/config.ts#L1-L325)
 
 **章节来源**
-- [packages/api/src/index.ts:1-64](file://packages/api/src/index.ts#L1-L64)
+- [packages/api/src/index.ts:44-53](file://packages/api/src/index.ts#L44-L53)
 - [packages/api/src/routes/notes.ts:1-161](file://packages/api/src/routes/notes.ts#L1-L161)
-- [packages/api/src/routes/ai.ts:1-149](file://packages/api/src/routes/ai.ts#L1-L149)
+- [packages/api/src/routes/ai.ts:1-388](file://packages/api/src/routes/ai.ts#L1-L388)
 - [packages/api/src/routes/search.ts:1-92](file://packages/api/src/routes/search.ts#L1-L92)
+- [packages/api/src/routes/config.ts:1-325](file://packages/api/src/routes/config.ts#L1-L325)
 
 ## 核心组件
 
@@ -94,6 +108,7 @@ class Note {
 +string id
 +string title
 +string content
++string summary
 +string[] tags
 +NoteCategory category
 +boolean isFavorite
@@ -118,10 +133,16 @@ class APIResponse {
 +any data
 +string error
 }
+class Config {
++string key
++string value
++Date updated_at
+}
 Note --> NoteCategory : uses
 AISession --> Message : contains
 APIResponse --> Note : wraps
 APIResponse --> AISession : wraps
+APIResponse --> Config : wraps
 ```
 
 **图表来源**
@@ -146,9 +167,11 @@ subgraph "业务服务"
 NoteService[笔记服务]
 AIService[AI服务]
 SearchService[搜索服务]
+ConfigService[配置服务]
 end
 subgraph "存储层"
 Storage[存储服务]
+SQLite[SQLite数据库]
 Memory[内存存储]
 Disk[磁盘存储]
 end
@@ -161,9 +184,12 @@ ErrorHandler --> Router
 Router --> NoteService
 Router --> AIService
 Router --> SearchService
+Router --> ConfigService
 NoteService --> Storage
 AIService --> Storage
 SearchService --> Storage
+ConfigService --> Storage
+Storage --> SQLite
 Storage --> Memory
 Storage --> Disk
 ```
@@ -380,7 +406,7 @@ Storage --> Disk
 ```
 
 **章节来源**
-- [packages/api/src/routes/ai.ts:7-19](file://packages/api/src/routes/ai.ts#L7-L19)
+- [packages/api/src/routes/ai.ts:110-138](file://packages/api/src/routes/ai.ts#L110-L138)
 
 #### 笔记总结
 
@@ -394,7 +420,7 @@ Storage --> Disk
 **响应**: 返回生成的摘要文本
 
 **章节来源**
-- [packages/api/src/routes/ai.ts:21-33](file://packages/api/src/routes/ai.ts#L21-L33)
+- [packages/api/src/routes/ai.ts:141-172](file://packages/api/src/routes/ai.ts#L141-L172)
 
 #### 文本润色
 
@@ -408,7 +434,7 @@ Storage --> Disk
 **响应**: 返回润色后的文本
 
 **章节来源**
-- [packages/api/src/routes/ai.ts:35-47](file://packages/api/src/routes/ai.ts#L35-L47)
+- [packages/api/src/routes/ai.ts:175-200](file://packages/api/src/routes/ai.ts#L175-L200)
 
 #### 文本翻译
 
@@ -422,7 +448,7 @@ Storage --> Disk
 **响应**: 返回翻译结果
 
 **章节来源**
-- [packages/api/src/routes/ai.ts:49-65](file://packages/api/src/routes/ai.ts#L49-L65)
+- [packages/api/src/routes/ai.ts:203-233](file://packages/api/src/routes/ai.ts#L203-L233)
 
 #### 学习建议
 
@@ -435,7 +461,7 @@ Storage --> Disk
 **响应**: 返回建议列表
 
 **章节来源**
-- [packages/api/src/routes/ai.ts:67-79](file://packages/api/src/routes/ai.ts#L67-L79)
+- [packages/api/src/routes/ai.ts:236-271](file://packages/api/src/routes/ai.ts#L236-L271)
 
 #### 通用AI操作
 
@@ -456,7 +482,7 @@ Storage --> Disk
 **响应**: 返回操作结果
 
 **章节来源**
-- [packages/api/src/routes/ai.ts:81-119](file://packages/api/src/routes/ai.ts#L81-L119)
+- [packages/api/src/routes/ai.ts:274-320](file://packages/api/src/routes/ai.ts#L274-L320)
 
 #### 聊天会话管理
 
@@ -472,7 +498,7 @@ Storage --> Disk
 **响应**: 返回会话信息
 
 **章节来源**
-- [packages/api/src/routes/ai.ts:121-128](file://packages/api/src/routes/ai.ts#L121-L128)
+- [packages/api/src/routes/ai.ts:323-336](file://packages/api/src/routes/ai.ts#L323-L336)
 
 #### 发送聊天消息
 
@@ -490,7 +516,144 @@ Storage --> Disk
 **响应**: 返回AI回复
 
 **章节来源**
-- [packages/api/src/routes/ai.ts:130-146](file://packages/api/src/routes/ai.ts#L130-L146)
+- [packages/api/src/routes/ai.ts:339-385](file://packages/api/src/routes/ai.ts#L339-L385)
+
+### 配置管理API
+
+#### 获取所有配置
+
+**端点**: `GET /api/config`
+**功能**: 获取所有配置信息
+
+**响应数据结构**:
+```json
+{
+  "success": true,
+  "data": {
+    "ai": {
+      "apiBase": string,
+      "port": number,
+      "model": string,
+      "apiKey": string
+    },
+    "miniMemory": {
+      "host": string,
+      "port": number,
+      "enabled": boolean,
+      "password": string
+    },
+    "server": {
+      "port": number,
+      "host": string
+    }
+  }
+}
+```
+
+**章节来源**
+- [packages/api/src/routes/config.ts:101-124](file://packages/api/src/routes/config.ts#L101-L124)
+
+#### 更新AI配置
+
+**端点**: `PUT /api/config/ai`
+**功能**: 更新AI服务配置
+**请求体**:
+```json
+{
+  "apiBase"?: string,
+  "port"?: number,
+  "model"?: string,
+  "apiKey"?: string
+}
+```
+
+**响应**: 返回更新后的AI配置
+
+**章节来源**
+- [packages/api/src/routes/config.ts:127-156](file://packages/api/src/routes/config.ts#L127-L156)
+
+#### 更新MiniMemory配置
+
+**端点**: `PUT /api/config/miniMemory`
+**功能**: 更新MiniMemory配置
+**请求体**:
+```json
+{
+  "host"?: string,
+  "port"?: number,
+  "enabled"?: boolean,
+  "password"?: string
+}
+```
+
+**响应**: 返回更新后的MiniMemory配置
+
+**章节来源**
+- [packages/api/src/routes/config.ts:159-188](file://packages/api/src/routes/config.ts#L159-L188)
+
+#### 更新服务器配置
+
+**端点**: `PUT /api/config/server`
+**功能**: 更新服务器配置
+**请求体**:
+```json
+{
+  "port"?: number,
+  "host"?: string
+}
+```
+
+**响应**: 返回更新后的服务器配置
+
+**章节来源**
+- [packages/api/src/routes/config.ts:191-214](file://packages/api/src/routes/config.ts#L191-L214)
+
+#### 重置配置
+
+**端点**: `POST /api/config/reset`
+**功能**: 将所有配置重置为默认值
+
+**响应**: 返回重置后的默认配置
+
+**章节来源**
+- [packages/api/src/routes/config.ts:217-243](file://packages/api/src/routes/config.ts#L217-L243)
+
+#### 测试AI连接
+
+**端点**: `GET /api/config/ai/test`
+**功能**: 测试AI服务连接状态
+
+**响应数据结构**:
+```json
+{
+  "success": true,
+  "data": {
+    "connected": boolean,
+    "models": string[]
+  }
+}
+```
+
+**章节来源**
+- [packages/api/src/routes/config.ts:246-274](file://packages/api/src/routes/config.ts#L246-L274)
+
+#### 测试MiniMemory连接
+
+**端点**: `GET /api/config/miniMemory/test`
+**功能**: 测试MiniMemory连接状态
+
+**响应数据结构**:
+```json
+{
+  "success": true,
+  "data": {
+    "connected": boolean
+  }
+}
+```
+
+**章节来源**
+- [packages/api/src/routes/config.ts:277-320](file://packages/api/src/routes/config.ts#L277-L320)
 
 ### 搜索API
 
@@ -560,29 +723,33 @@ subgraph "API层"
 NotesRoute[笔记路由]
 AIRoute[AI路由]
 SearchRoute[搜索路由]
+ConfigRoute[配置路由]
 end
 subgraph "服务层"
 NoteService[笔记服务]
 AIService[AI服务]
 SearchService[搜索服务]
 StorageService[存储服务]
+ConfigService[配置服务]
 end
 subgraph "数据层"
-MemoryStore[内存存储]
+SQLiteStore[SQLite存储]
 FileStore[文件存储]
 end
 NotesRoute --> NoteService
 AIRoute --> AIService
 SearchRoute --> SearchService
+ConfigRoute --> ConfigService
 NoteService --> StorageService
 AIService --> StorageService
 SearchService --> StorageService
-StorageService --> MemoryStore
+ConfigService --> StorageService
+StorageService --> SQLiteStore
 StorageService --> FileStore
 ```
 
 **图表来源**
-- [packages/api/src/index.ts:4-18](file://packages/api/src/index.ts#L4-L18)
+- [packages/api/src/index.ts:44-53](file://packages/api/src/index.ts#L44-L53)
 - [packages/core/src/storage.ts:108-317](file://packages/core/src/storage.ts#L108-L317)
 
 ### 数据流分析
@@ -615,14 +782,16 @@ Note : 统一的错误处理和响应格式
 ### 缓存策略
 
 系统支持两种存储后端：
-- **内存存储**: 使用MiniMemory提供高性能缓存
+- **SQLite数据库**: 提供持久化存储和配置管理
 - **文件存储**: 使用本地文件系统确保数据持久性
+- **内存存储**: 可选的MiniMemory支持用于高性能缓存
 
 ### 并发处理
 
 - 使用Hono框架的异步处理能力
 - AI操作通过独立的服务实例处理
 - 存储操作采用异步I/O模式
+- 配置管理使用SQLite事务保证数据一致性
 
 ### 优化建议
 
@@ -630,6 +799,7 @@ Note : 统一的错误处理和响应格式
 2. **分页查询**: 合理使用limit和offset参数避免大数据量传输
 3. **缓存利用**: 对频繁访问的数据建立适当的缓存策略
 4. **连接池**: AI服务连接建议复用以减少初始化开销
+5. **配置预热**: 启动时预加载配置以减少首次请求延迟
 
 ## 故障排除指南
 
@@ -657,6 +827,7 @@ Note : 统一的错误处理和响应格式
 2. **验证依赖**: 确认AI服务和存储服务的连接状态
 3. **测试端点**: 使用curl或Postman测试关键API端点
 4. **监控指标**: 关注系统的CPU、内存和网络使用情况
+5. **配置验证**: 使用`/api/config/ai/test`和`/api/config/miniMemory/test`端点验证配置有效性
 
 **章节来源**
 - [packages/api/src/routes/notes.ts:32-43](file://packages/api/src/routes/notes.ts#L32-L43)
@@ -670,13 +841,15 @@ Note : 统一的错误处理和响应格式
 1. **模块化设计**: 清晰的分层架构便于维护和扩展
 2. **统一接口**: 标准化的响应格式简化了客户端集成
 3. **灵活的存储**: 支持多种存储后端满足不同需求
-4. **丰富的功能**: 完整的笔记管理和AI增强功能
+4. **丰富的功能**: 完整的笔记管理、AI增强和配置管理功能
+5. **动态配置**: 支持运行时配置修改和连接测试
 
 建议在生产环境中：
 - 实施完整的认证和授权机制
 - 配置适当的速率限制和防护措施
 - 建立监控和日志系统
 - 制定备份和灾难恢复计划
+- 定期测试AI服务和存储连接
 
 ## 附录
 
@@ -704,9 +877,26 @@ curl -X POST "http://localhost:3000/api/notes" \
   -d '{"title":"示例笔记","content":"笔记内容","tags":["tag1","tag2"]}'
 ```
 
+#### 获取所有配置
+```bash
+curl -X GET "http://localhost:3000/api/config"
+```
+
+#### 更新AI配置
+```bash
+curl -X PUT "http://localhost:3000/api/config/ai" \
+  -H "Content-Type: application/json" \
+  -d '{"apiBase":"http://localhost","port":11434,"model":"llama3"}'
+```
+
 #### AI文本润色
 ```bash
 curl -X POST "http://localhost:3000/api/ai/polish/NOTE_ID?style=professional" \
   -H "Content-Type: application/json" \
   -d '{"content":"需要润色的内容"}'
+```
+
+#### 测试AI连接
+```bash
+curl -X GET "http://localhost:3000/api/config/ai/test"
 ```

@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNote } from '../hooks/useNotes';
 import { api } from '../api/client';
-import { useTextLayout } from '../components/TextLayout';
+import { RichTextEditor, RichTextViewer } from '../components/RichTextEditor';
 
 function NotePage() {
   const { id } = useParams<{ id: string }>();
@@ -13,15 +13,6 @@ function NotePage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [saving, setSaving] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [contentWidth, setContentWidth] = useState(700);
-
-  // 使用 pretext 测量文本高度
-  const textLayout = useTextLayout(content, contentWidth, {
-    lineHeight: 28,
-    font: '16px Inter, system-ui, sans-serif',
-    whiteSpace: 'pre-wrap',
-  });
 
   useEffect(() => {
     if (note) {
@@ -29,18 +20,6 @@ function NotePage() {
       setContent(note.content);
     }
   }, [note]);
-
-  // 监听内容区域宽度变化
-  useEffect(() => {
-    const updateWidth = () => {
-      if (contentRef.current) {
-        setContentWidth(contentRef.current.clientWidth - 48);
-      }
-    };
-    updateWidth();
-    window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
-  }, []);
 
   const handleSave = async () => {
     if (!id) return;
@@ -162,15 +141,16 @@ function NotePage() {
               className="w-full text-2xl font-bold mb-4 px-0 border-0 focus:outline-none bg-transparent"
               placeholder="笔记标题"
             />
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="w-full min-h-[400px] px-0 border-0 focus:outline-none bg-transparent resize-none"
-              placeholder="开始写笔记..."
+            <RichTextEditor
+              content={content}
+              onChange={setContent}
+              width={768}
+              height={400}
+              placeholder="开始写笔记... 支持 Markdown 格式"
             />
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto" ref={contentRef}>
+          <div className="max-w-3xl mx-auto">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">{note.title}</h1>
             {note.summary && (
               <div className="bg-purple-50 rounded-lg p-4 mb-6">
@@ -178,16 +158,7 @@ function NotePage() {
                 <p className="text-gray-700">{note.summary}</p>
               </div>
             )}
-            <div 
-              className="prose prose-sm max-w-none whitespace-pre-wrap"
-              style={{ minHeight: `${textLayout.height}px` }}
-            >
-              {note.content}
-            </div>
-            {/* 文本布局信息 */}
-            <div className="mt-4 text-xs text-gray-400">
-              文本高度: {textLayout.height}px | 行数: {textLayout.lineCount}
-            </div>
+            <RichTextViewer content={note.content} width={768} />
             {note.tags.length > 0 && (
               <div className="flex gap-2 mt-6">
                 {note.tags.map((tag, index) => (

@@ -11,11 +11,14 @@
 - [Header.tsx](file://packages/web/src/components/Header.tsx)
 - [Sidebar.tsx](file://packages/web/src/components/Sidebar.tsx)
 - [AIAssistantPanel.tsx](file://packages/web/src/components/AIAssistantPanel.tsx)
+- [RichTextEditor.tsx](file://packages/web/src/components/RichTextEditor.tsx)
+- [TextLayout.tsx](file://packages/web/src/components/TextLayout.tsx)
 - [useNotes.ts](file://packages/web/src/hooks/useNotes.ts)
 - [client.ts](file://packages/web/src/api/client.ts)
 - [HomePage.tsx](file://packages/web/src/pages/HomePage.tsx)
 - [NotePage.tsx](file://packages/web/src/pages/NotePage.tsx)
 - [AIAssistantPage.tsx](file://packages/web/src/pages/AIAssistantPage.tsx)
+- [SettingsPage.tsx](file://packages/web/src/pages/SettingsPage.tsx)
 - [vite.config.ts](file://packages/web/vite.config.ts)
 - [tailwind.config.js](file://packages/web/tailwind.config.js)
 - [postcss.config.js](file://packages/web/postcss.config.js)
@@ -35,7 +38,9 @@
 10. [附录](#附录)
 
 ## 简介
-本项目是一个基于 React 的番茄笔记 Web 前端应用，采用模块化多包工作区结构，结合 Vite 构建工具与 Tailwind CSS 实现现代化 UI 设计。应用围绕“笔记”这一核心实体，提供笔记列表、编辑器、AI 助手对话等页面，并通过自定义 Hook 封装数据获取与状态逻辑，配合 React Router 实现页面级路由。
+本项目是一个基于 React 的番茄笔记 Web 前端应用，采用模块化多包工作区结构，结合 Vite 构建工具与 Tailwind CSS 实现现代化 UI 设计。应用围绕"笔记"这一核心实体，提供笔记列表、编辑器、AI 助手对话、设置管理等页面，并通过自定义 Hook 封装数据获取与状态逻辑，配合 React Router 实现页面级路由。
+
+**更新** 应用现已获得显著增强，包括全新的设置页面、富文本编辑器组件、文本布局组件以及完整的 AI 集成功能。
 
 ## 项目结构
 项目采用 monorepo 结构，根目录通过脚本统一管理各包的开发、构建、测试与清理任务；前端应用位于 packages/web，包含入口、路由、页面、组件、API 客户端、自定义 Hook 以及样式配置。
@@ -54,11 +59,14 @@ L["Layout.tsx"]
 H["Header.tsx"]
 S["Sidebar.tsx"]
 AIP["AIAssistantPanel.tsx"]
+RTE["RichTextEditor.tsx"]
+TL["TextLayout.tsx"]
 UN["useNotes.ts"]
 C["client.ts"]
 HP["HomePage.tsx"]
 NP["NotePage.tsx"]
 AIPG["AIAssistantPage.tsx"]
+SP["SettingsPage.tsx"]
 VC["vite.config.ts"]
 TW["tailwind.config.js"]
 PC["postcss.config.js"]
@@ -75,73 +83,83 @@ L --> AIP
 APP --> HP
 APP --> NP
 APP --> AIPG
+APP --> SP
 HP --> UN
 NP --> UN
 HP --> C
 NP --> C
 AIPG --> C
-VC --> TW
-VC --> PC
-M --> CSS
+SP --> C
+RTE --> TL
 ```
 
-图表来源
+**图表来源**
 - [main.tsx:1-14](file://packages/web/src/main.tsx#L1-L14)
-- [App.tsx:1-20](file://packages/web/src/App.tsx#L1-L20)
+- [App.tsx:1-22](file://packages/web/src/App.tsx#L1-L22)
 - [Layout.tsx](file://packages/web/src/components/Layout.tsx)
 - [Header.tsx](file://packages/web/src/components/Header.tsx)
 - [Sidebar.tsx](file://packages/web/src/components/Sidebar.tsx)
 - [AIAssistantPanel.tsx](file://packages/web/src/components/AIAssistantPanel.tsx)
+- [RichTextEditor.tsx:1-720](file://packages/web/src/components/RichTextEditor.tsx#L1-L720)
+- [TextLayout.tsx:1-249](file://packages/web/src/components/TextLayout.tsx#L1-L249)
 - [useNotes.ts](file://packages/web/src/hooks/useNotes.ts)
 - [client.ts](file://packages/web/src/api/client.ts)
 - [HomePage.tsx:1-218](file://packages/web/src/pages/HomePage.tsx#L1-L218)
-- [NotePage.tsx:1-200](file://packages/web/src/pages/NotePage.tsx#L1-L200)
+- [NotePage.tsx:1-196](file://packages/web/src/pages/NotePage.tsx#L1-L196)
 - [AIAssistantPage.tsx:1-221](file://packages/web/src/pages/AIAssistantPage.tsx#L1-L221)
+- [SettingsPage.tsx:1-408](file://packages/web/src/pages/SettingsPage.tsx#L1-L408)
 - [vite.config.ts](file://packages/web/vite.config.ts)
 - [tailwind.config.js](file://packages/web/tailwind.config.js)
 - [postcss.config.js](file://packages/web/postcss.config.js)
 - [index.css](file://packages/web/src/index.css)
 
-章节来源
+**章节来源**
 - [package.json:1-25](file://package.json#L1-L25)
 - [turbo.json:1-23](file://turbo.json#L1-L23)
 - [tsconfig.json:1-22](file://tsconfig.json#L1-L22)
 - [main.tsx:1-14](file://packages/web/src/main.tsx#L1-L14)
-- [App.tsx:1-20](file://packages/web/src/App.tsx#L1-L20)
+- [App.tsx:1-22](file://packages/web/src/App.tsx#L1-L22)
 
 ## 核心组件
 - 应用入口与路由
   - 入口文件在 packages/web/src/main.tsx 中挂载 BrowserRouter 并渲染 App。
-  - App.tsx 定义顶层路由：首页、笔记详情页、AI 助手页，均包裹在 Layout 组件内。
+  - App.tsx 定义顶层路由：首页、笔记详情页、AI 助手页、设置页，均包裹在 Layout 组件内。
 - 布局与导航
   - Layout.tsx 提供全局布局骨架，包含 Header.tsx 与 Sidebar.tsx，用于统一头部信息与侧边导航。
   - AIAssistantPanel.tsx 作为布局内的可选面板，用于展示 AI 助手相关 UI。
 - 页面组件
   - HomePage.tsx：展示统计、最近笔记列表、创建笔记弹窗、收藏切换等。
-  - NotePage.tsx：单篇笔记的读写、删除、收藏切换、AI 摘要展示。
+  - NotePage.tsx：单篇笔记的读写、删除、收藏切换、AI 摘要展示，集成富文本编辑器。
   - AIAssistantPage.tsx：聊天式 AI 助手，支持快捷动作、消息滚动、错误兜底。
+  - SettingsPage.tsx：完整的应用配置管理页面，支持 AI 模型、MiniMemory、服务器配置。
+- UI 组件
+  - RichTextEditor.tsx：富文本编辑器，支持 Markdown 格式、实时预览、快捷键操作。
+  - TextLayout.tsx：文本布局测量组件，支持虚拟化列表、行高计算、文本渲染。
 - 自定义 Hook
-  - useNotes.ts：封装笔记列表、单条笔记、创建、统计等数据获取与刷新逻辑。
+  - useNotes.ts：封装笔记列表、单条笔记、创建、统计、搜索等数据获取与刷新逻辑。
 - API 客户端
-  - client.ts：封装与后端交互的请求方法，如笔记 CRUD、收藏切换、AI 聊天会话等。
+  - client.ts：封装与后端交互的请求方法，包括笔记 CRUD、收藏切换、AI 聊天会话、配置管理等。
 
-章节来源
+**章节来源**
 - [main.tsx:1-14](file://packages/web/src/main.tsx#L1-L14)
-- [App.tsx:1-20](file://packages/web/src/App.tsx#L1-L20)
+- [App.tsx:1-22](file://packages/web/src/App.tsx#L1-L22)
 - [Layout.tsx](file://packages/web/src/components/Layout.tsx)
 - [Header.tsx](file://packages/web/src/components/Header.tsx)
 - [Sidebar.tsx](file://packages/web/src/components/Sidebar.tsx)
 - [AIAssistantPanel.tsx](file://packages/web/src/components/AIAssistantPanel.tsx)
+- [RichTextEditor.tsx:1-720](file://packages/web/src/components/RichTextEditor.tsx#L1-L720)
+- [TextLayout.tsx:1-249](file://packages/web/src/components/TextLayout.tsx#L1-L249)
 - [useNotes.ts](file://packages/web/src/hooks/useNotes.ts)
 - [client.ts](file://packages/web/src/api/client.ts)
 - [HomePage.tsx:1-218](file://packages/web/src/pages/HomePage.tsx#L1-L218)
-- [NotePage.tsx:1-200](file://packages/web/src/pages/NotePage.tsx#L1-L200)
+- [NotePage.tsx:1-196](file://packages/web/src/pages/NotePage.tsx#L1-L196)
 - [AIAssistantPage.tsx:1-221](file://packages/web/src/pages/AIAssistantPage.tsx#L1-L221)
+- [SettingsPage.tsx:1-408](file://packages/web/src/pages/SettingsPage.tsx#L1-L408)
 
 ## 架构总览
-应用采用“页面-组件-Hook-API”的分层架构：
+应用采用"页面-组件-Hook-API"的分层架构：
 - 页面层：负责业务场景编排与用户交互。
-- 组件层：可复用 UI 组件，如卡片、面板等。
+- 组件层：可复用 UI 组件，如卡片、面板、富文本编辑器等。
 - Hook 层：封装数据获取、缓存与状态同步。
 - API 层：统一请求封装，屏蔽具体网络细节。
 
@@ -151,12 +169,15 @@ subgraph "页面层"
 HP["HomePage"]
 NP["NotePage"]
 AIPG["AIAssistantPage"]
+SP["SettingsPage"]
 end
 subgraph "组件层"
 LYT["Layout"]
 HDR["Header"]
 SDB["Sidebar"]
 AIPN["AIAssistantPanel"]
+RTE["RichTextEditor"]
+TL["TextLayout"]
 end
 subgraph "Hook层"
 UN["useNotes"]
@@ -169,19 +190,23 @@ NP --> UN
 HP --> CL
 NP --> CL
 AIPG --> CL
-LYT --> HDR
-LYT --> SDB
-LYT --> AIPN
+SP --> CL
+SP --> RTE
+NP --> RTE
+NP --> TL
 ```
 
-图表来源
+**图表来源**
 - [HomePage.tsx:1-218](file://packages/web/src/pages/HomePage.tsx#L1-L218)
-- [NotePage.tsx:1-200](file://packages/web/src/pages/NotePage.tsx#L1-L200)
+- [NotePage.tsx:1-196](file://packages/web/src/pages/NotePage.tsx#L1-L196)
 - [AIAssistantPage.tsx:1-221](file://packages/web/src/pages/AIAssistantPage.tsx#L1-L221)
+- [SettingsPage.tsx:1-408](file://packages/web/src/pages/SettingsPage.tsx#L1-L408)
 - [Layout.tsx](file://packages/web/src/components/Layout.tsx)
 - [Header.tsx](file://packages/web/src/components/Header.tsx)
 - [Sidebar.tsx](file://packages/web/src/components/Sidebar.tsx)
 - [AIAssistantPanel.tsx](file://packages/web/src/components/AIAssistantPanel.tsx)
+- [RichTextEditor.tsx:1-720](file://packages/web/src/components/RichTextEditor.tsx#L1-L720)
+- [TextLayout.tsx:1-249](file://packages/web/src/components/TextLayout.tsx#L1-L249)
 - [useNotes.ts](file://packages/web/src/hooks/useNotes.ts)
 - [client.ts](file://packages/web/src/api/client.ts)
 
@@ -191,7 +216,7 @@ LYT --> AIPN
 - 入口挂载与严格模式
   - 在 main.tsx 中以 BrowserRouter 包裹 App，并启用 React.StrictMode。
 - 顶层路由
-  - App.tsx 定义根路径 "/" 下的嵌套路由：首页、笔记详情、AI 助手页，均在 Layout 下渲染。
+  - App.tsx 定义根路径 "/" 下的嵌套路由：首页、笔记详情、AI 助手页、设置页，均在 Layout 下渲染。
 
 ```mermaid
 sequenceDiagram
@@ -207,13 +232,13 @@ App->>Layout : 渲染默认布局
 Layout-->>Browser : 显示统一布局
 ```
 
-图表来源
+**图表来源**
 - [main.tsx:1-14](file://packages/web/src/main.tsx#L1-L14)
-- [App.tsx:1-20](file://packages/web/src/App.tsx#L1-L20)
+- [App.tsx:1-22](file://packages/web/src/App.tsx#L1-L22)
 
-章节来源
+**章节来源**
 - [main.tsx:1-14](file://packages/web/src/main.tsx#L1-L14)
-- [App.tsx:1-20](file://packages/web/src/App.tsx#L1-L20)
+- [App.tsx:1-22](file://packages/web/src/App.tsx#L1-L22)
 
 ### 首页（笔记列表）
 - 功能要点
@@ -240,12 +265,12 @@ Navigate --> End
 Empty --> End
 ```
 
-图表来源
+**图表来源**
 - [HomePage.tsx:1-218](file://packages/web/src/pages/HomePage.tsx#L1-L218)
 - [useNotes.ts](file://packages/web/src/hooks/useNotes.ts)
 - [client.ts](file://packages/web/src/api/client.ts)
 
-章节来源
+**章节来源**
 - [HomePage.tsx:1-218](file://packages/web/src/pages/HomePage.tsx#L1-L218)
 - [useNotes.ts](file://packages/web/src/hooks/useNotes.ts)
 - [client.ts](file://packages/web/src/api/client.ts)
@@ -254,7 +279,7 @@ Empty --> End
 - 功能要点
   - 读取当前笔记，支持编辑/保存、删除、收藏切换。
   - 展示 AI 摘要与标签。
-  - 编辑态与只读态切换。
+  - 编辑态与只读态切换，集成富文本编辑器。
 - 数据流
   - useParams 获取笔记 ID，useNote 获取笔记详情。
   - 更新时调用 api.updateNote，删除时调用 api.deleteNote，收藏切换调用 api.toggleFavorite。
@@ -265,12 +290,13 @@ participant User as "用户"
 participant Page as "NotePage"
 participant Hook as "useNote"
 participant API as "client"
-participant Router as "路由"
+participant Editor as "RichTextEditor"
 User->>Page : 打开笔记详情
 Page->>Hook : 获取笔记详情
 Hook-->>Page : 返回笔记数据
 User->>Page : 点击编辑
 Page->>Page : 进入编辑态
+Page->>Editor : 渲染富文本编辑器
 User->>Page : 点击保存
 Page->>API : updateNote(id, {title,content})
 API-->>Page : 成功
@@ -281,15 +307,17 @@ API-->>Page : 成功
 Page->>Router : 导航回首页
 ```
 
-图表来源
-- [NotePage.tsx:1-200](file://packages/web/src/pages/NotePage.tsx#L1-L200)
+**图表来源**
+- [NotePage.tsx:1-196](file://packages/web/src/pages/NotePage.tsx#L1-L196)
 - [useNotes.ts](file://packages/web/src/hooks/useNotes.ts)
 - [client.ts](file://packages/web/src/api/client.ts)
+- [RichTextEditor.tsx:1-720](file://packages/web/src/components/RichTextEditor.tsx#L1-L720)
 
-章节来源
-- [NotePage.tsx:1-200](file://packages/web/src/pages/NotePage.tsx#L1-L200)
+**章节来源**
+- [NotePage.tsx:1-196](file://packages/web/src/pages/NotePage.tsx#L1-L196)
 - [useNotes.ts](file://packages/web/src/hooks/useNotes.ts)
 - [client.ts](file://packages/web/src/api/client.ts)
+- [RichTextEditor.tsx:1-720](file://packages/web/src/components/RichTextEditor.tsx#L1-L720)
 
 ### AI 助手页
 - 功能要点
@@ -317,17 +345,83 @@ Page->>Page : 滚动到底部
 Page-->>User : 展示回复
 ```
 
-图表来源
+**图表来源**
 - [AIAssistantPage.tsx:1-221](file://packages/web/src/pages/AIAssistantPage.tsx#L1-L221)
 - [client.ts](file://packages/web/src/api/client.ts)
 
-章节来源
+**章节来源**
 - [AIAssistantPage.tsx:1-221](file://packages/web/src/pages/AIAssistantPage.tsx#L1-L221)
 - [client.ts](file://packages/web/src/api/client.ts)
+
+### 设置页面
+- 功能要点
+  - AI 模型配置：API 基础地址、端口、模型、API Key。
+  - MiniMemory 配置：启用开关、主机地址、端口、密码。
+  - 服务器配置：监听地址、端口。
+  - 连接测试：AI 连接测试、MiniMemory 连接测试。
+  - 配置重置：一键重置所有配置。
+- 数据流
+  - 使用 api.getConfig 加载配置，分别调用 updateAIConfig、updateMiniMemoryConfig、updateServerConfig 保存。
+  - 通过 testAIConnection、testMiniMemoryConnection 测试连接状态。
+
+```mermaid
+flowchart TD
+Start(["进入设置页面"]) --> LoadConfig["api.getConfig 加载配置"]
+LoadConfig --> RenderForm["渲染配置表单"]
+RenderForm --> EditAI["编辑AI配置"]
+EditAI --> SaveAI["api.updateAIConfig 保存"]
+RenderForm --> EditMini["编辑MiniMemory配置"]
+EditMini --> SaveMini["api.updateMiniMemoryConfig 保存"]
+RenderForm --> EditServer["编辑服务器配置"]
+EditServer --> SaveServer["api.updateServerConfig 保存"]
+RenderForm --> TestAI["testAIConnection 测试"]
+RenderForm --> TestMini["testMiniMemoryConnection 测试"]
+RenderForm --> Reset["resetConfig 重置配置"]
+```
+
+**图表来源**
+- [SettingsPage.tsx:1-408](file://packages/web/src/pages/SettingsPage.tsx#L1-L408)
+- [client.ts](file://packages/web/src/api/client.ts)
+
+**章节来源**
+- [SettingsPage.tsx:1-408](file://packages/web/src/pages/SettingsPage.tsx#L1-L408)
+- [client.ts](file://packages/web/src/api/client.ts)
+
+### 富文本编辑器组件
+- 功能要点
+  - 支持 Markdown 格式：粗体、斜体、代码、链接、标题、引用、代码块、列表。
+  - 实时预览：编辑态与预览态切换。
+  - 快捷键：Ctrl+B（粗体）、Ctrl+I（斜体）、Ctrl+K（链接）。
+  - 行号与统计：显示行数与字符数。
+  - 块级格式：引用、代码块、列表插入。
+- 技术实现
+  - 使用 @chenglou/pretext 进行文本布局测量。
+  - 支持虚拟化渲染，提高大文档性能。
+  - 自定义字体配置与行高控制。
+
+```mermaid
+flowchart TD
+Input["原始Markdown文本"] --> Parser["解析器"]
+Parser --> Blocks["富文本块"]
+Blocks --> Segments["富文本片段"]
+Segments --> Layout["pretext布局测量"]
+Layout --> Render["渲染引擎"]
+Render --> Output["HTML输出"]
+```
+
+**图表来源**
+- [RichTextEditor.tsx:1-720](file://packages/web/src/components/RichTextEditor.tsx#L1-L720)
+- [TextLayout.tsx:1-249](file://packages/web/src/components/TextLayout.tsx#L1-L249)
+
+**章节来源**
+- [RichTextEditor.tsx:1-720](file://packages/web/src/components/RichTextEditor.tsx#L1-L720)
+- [TextLayout.tsx:1-249](file://packages/web/src/components/TextLayout.tsx#L1-L249)
 
 ### 布局与导航
 - Layout.tsx 作为全局容器，组合 Header.tsx 与 Sidebar.tsx，确保所有页面共享一致的头部与侧边菜单。
 - AIAssistantPanel.tsx 作为可选面板，可在布局中按需展示。
+- Header.tsx 包含搜索功能与通知图标。
+- Sidebar.tsx 提供笔记过滤、导航和设置入口。
 
 ```mermaid
 graph TB
@@ -340,13 +434,13 @@ L --> S
 L --> AIP
 ```
 
-图表来源
+**图表来源**
 - [Layout.tsx](file://packages/web/src/components/Layout.tsx)
 - [Header.tsx](file://packages/web/src/components/Header.tsx)
 - [Sidebar.tsx](file://packages/web/src/components/Sidebar.tsx)
 - [AIAssistantPanel.tsx](file://packages/web/src/components/AIAssistantPanel.tsx)
 
-章节来源
+**章节来源**
 - [Layout.tsx](file://packages/web/src/components/Layout.tsx)
 - [Header.tsx](file://packages/web/src/components/Header.tsx)
 - [Sidebar.tsx](file://packages/web/src/components/Sidebar.tsx)
@@ -356,13 +450,13 @@ L --> AIP
 - 页面内局部状态
   - 首页与笔记页广泛使用 useState 管理表单、模态框、编辑态、保存状态等。
 - 数据获取与缓存
-  - useNotes 封装了笔记列表、单条笔记、创建、统计等逻辑，统一处理加载、错误与刷新。
+  - useNotes 封装了笔记列表、单条笔记、创建、统计、搜索等逻辑，统一处理加载、错误与刷新。
 - 全局状态
   - 当前实现未引入集中式状态库（如 Redux/Zustand），而是通过 React Hooks 与组件树传递 props 管理状态，适合中小型应用。
 
-章节来源
+**章节来源**
 - [HomePage.tsx:1-218](file://packages/web/src/pages/HomePage.tsx#L1-L218)
-- [NotePage.tsx:1-200](file://packages/web/src/pages/NotePage.tsx#L1-L200)
+- [NotePage.tsx:1-196](file://packages/web/src/pages/NotePage.tsx#L1-L196)
 - [useNotes.ts](file://packages/web/src/hooks/useNotes.ts)
 
 ### 用户界面设计与自定义选项
@@ -375,13 +469,14 @@ L --> AIP
   - 使用语义化 HTML 标签与可聚焦元素，提供键盘交互能力。
   - 表单控件具备焦点样式与无障碍属性基础。
 
-章节来源
+**章节来源**
 - [tailwind.config.js](file://packages/web/tailwind.config.js)
 - [postcss.config.js](file://packages/web/postcss.config.js)
 - [index.css](file://packages/web/src/index.css)
 - [HomePage.tsx:1-218](file://packages/web/src/pages/HomePage.tsx#L1-L218)
-- [NotePage.tsx:1-200](file://packages/web/src/pages/NotePage.tsx#L1-L200)
+- [NotePage.tsx:1-196](file://packages/web/src/pages/NotePage.tsx#L1-L196)
 - [AIAssistantPage.tsx:1-221](file://packages/web/src/pages/AIAssistantPage.tsx#L1-L221)
+- [SettingsPage.tsx:1-408](file://packages/web/src/pages/SettingsPage.tsx#L1-L408)
 
 ### 组件使用示例与集成指导
 - 引入与挂载
@@ -390,14 +485,19 @@ L --> AIP
   - 在 App.tsx 中注册页面路由，确保 Layout 包裹页面组件。
 - 数据集成
   - 在页面中导入 useNotes 与 api 客户端，按需调用 CRUD 与收藏切换接口。
+- 富文本编辑器集成
+  - 在 NotePage 中使用 RichTextEditor 组件，支持 Markdown 格式。
+  - 使用 TextLayout 组件进行文本布局测量与虚拟化渲染。
 - 样式集成
   - 在入口 CSS 文件中引入 Tailwind 指令，确保样式生效。
 
-章节来源
+**章节来源**
 - [main.tsx:1-14](file://packages/web/src/main.tsx#L1-L14)
-- [App.tsx:1-20](file://packages/web/src/App.tsx#L1-L20)
+- [App.tsx:1-22](file://packages/web/src/App.tsx#L1-L22)
 - [useNotes.ts](file://packages/web/src/hooks/useNotes.ts)
 - [client.ts](file://packages/web/src/api/client.ts)
+- [RichTextEditor.tsx:1-720](file://packages/web/src/components/RichTextEditor.tsx#L1-L720)
+- [TextLayout.tsx:1-249](file://packages/web/src/components/TextLayout.tsx#L1-L249)
 - [index.css](file://packages/web/src/index.css)
 
 ## 依赖关系分析
@@ -422,7 +522,7 @@ TWConf["tailwind.config.js"] --> WebPkg
 PCS["postcss.config.js"] --> WebPkg
 ```
 
-图表来源
+**图表来源**
 - [package.json:1-25](file://package.json#L1-L25)
 - [turbo.json:1-23](file://turbo.json#L1-L23)
 - [tsconfig.json:1-22](file://tsconfig.json#L1-L22)
@@ -430,7 +530,7 @@ PCS["postcss.config.js"] --> WebPkg
 - [tailwind.config.js](file://packages/web/tailwind.config.js)
 - [postcss.config.js](file://packages/web/postcss.config.js)
 
-章节来源
+**章节来源**
 - [package.json:1-25](file://package.json#L1-L25)
 - [turbo.json:1-23](file://turbo.json#L1-L23)
 - [tsconfig.json:1-22](file://tsconfig.json#L1-L22)
@@ -446,6 +546,9 @@ PCS["postcss.config.js"] --> WebPkg
   - 合理拆分组件与细粒度状态，避免不必要的重渲染。
 - 请求缓存
   - 在 useNotes 中增加缓存与去抖策略，减少重复请求。
+- 富文本性能
+  - 使用虚拟化渲染与布局测量，优化大文档显示性能。
+  - 预处理文本布局，避免重复计算。
 
 ## 故障排查指南
 - 路由不生效
@@ -456,16 +559,23 @@ PCS["postcss.config.js"] --> WebPkg
   - 确认 Tailwind 指令已引入，PostCSS 与 Tailwind 配置正确。
 - 构建失败
   - 查看 turbo.json 的 build 输出配置与依赖顺序，确保上游包先构建。
+- 富文本编辑器问题
+  - 检查 @chenglou/pretext 依赖是否正确安装。
+  - 确认文本布局测量函数调用参数正确。
+- 设置页面配置失败
+  - 检查 API 端点是否正确，确认配置对象结构符合要求。
 
-章节来源
+**章节来源**
 - [main.tsx:1-14](file://packages/web/src/main.tsx#L1-L14)
-- [App.tsx:1-20](file://packages/web/src/App.tsx#L1-L20)
+- [App.tsx:1-22](file://packages/web/src/App.tsx#L1-L22)
 - [useNotes.ts](file://packages/web/src/hooks/useNotes.ts)
 - [index.css](file://packages/web/src/index.css)
 - [turbo.json:1-23](file://turbo.json#L1-L23)
+- [RichTextEditor.tsx:1-720](file://packages/web/src/components/RichTextEditor.tsx#L1-L720)
+- [SettingsPage.tsx:1-408](file://packages/web/src/pages/SettingsPage.tsx#L1-L408)
 
 ## 结论
-该前端应用以清晰的分层架构与模块化组织实现了笔记管理与 AI 辅助的核心功能。通过 React Router、自定义 Hook 与 API 客户端，页面与数据层解耦良好。Tailwind 与 Vite 的组合提供了高效的开发体验与良好的可维护性。建议在后续迭代中引入路由懒加载、状态持久化与更完善的错误边界，以进一步提升性能与稳定性。
+该前端应用以清晰的分层架构与模块化组织实现了笔记管理与 AI 辅助的核心功能。通过 React Router、自定义 Hook 与 API 客户端，页面与数据层解耦良好。新增的设置页面、富文本编辑器和文本布局组件大幅提升了应用的实用性和用户体验。Tailwind 与 Vite 的组合提供了高效的开发体验与良好的可维护性。建议在后续迭代中引入路由懒加载、状态持久化与更完善的错误边界，以进一步提升性能与稳定性。
 
 ## 附录
 - 构建与部署流程
@@ -477,3 +587,5 @@ PCS["postcss.config.js"] --> WebPkg
   - 主题系统：通过 CSS 变量与 Tailwind 主题扩展实现深浅主题切换。
   - 国际化：集成 i18n 库，按页面与组件维度逐步迁移。
   - 测试：补充页面与 Hook 的单元测试，覆盖关键交互与错误分支。
+  - 富文本增强：支持更多 Markdown 语法与导出功能。
+  - AI 集成：扩展更多 AI 功能，如语音输入、图像识别等。
